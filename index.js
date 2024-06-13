@@ -1,6 +1,7 @@
 const fs = require("fs");
 const http = require("http");
 const url = require("url");
+const slugify = require("slugify");
 const replaceTemplate = require("./modules/replaceTemplate");
 //Blocking sychronous way
 /*
@@ -30,6 +31,15 @@ console.log("text Written");
 
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, "utf-8");
 const dataObj = JSON.parse(data);
+const slugs = dataObj.map((el) => {
+  return slugify(el.productName, {
+    lower: true,
+  });
+});
+for (i = 0; i <= dataObj.length - 1; i++) {
+  dataObj[i].slugs = slugs[i];
+}
+
 const tempOverview = fs.readFileSync(
   `${__dirname}/templates/template-overview.html`,
   "utf-8"
@@ -56,7 +66,7 @@ const server = http.createServer((req, res) => {
       .map((el) => replaceTemplate(tempCard, el))
       .join("");
     const output = tempOverview.replace("{%PRODUCT_CARDS%}", cardsHtml);
-    console.log(cardsHtml);
+
     res.end(output);
 
     /////Product page
@@ -64,7 +74,8 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, {
       "Content-type": "text/html",
     });
-    const product = dataObj[query.id];
+    const product = dataObj.find(({ slugs }) => slugs === query.id);
+
     const output = replaceTemplate(tempProduct, product);
 
     // console.log(query);
